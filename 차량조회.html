@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>차량 조회 시스템</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            -webkit-appearance: none;
+        }
+        #searchButton {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        #searchButton:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .result-item {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .result-item span {
+            font-weight: bold;
+            color: #333;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>차량 번호 조회</h1>
+        <input type="number" id="searchInput" placeholder="차량번호 4자리를 입력하세요">
+        <button id="searchButton">조회</button>
+        <div id="result" class="hidden">
+            <p class="result-item"><strong>전체 번호:</strong> <span id="result-plate"></span></p>
+            <p class="result-item"><strong>차종:</strong> <span id="result-model"></span></p>
+            <p class="result-item"><strong>운전자:</strong> <span id="result-rank"></span></p>
+        </div>
+        <p id="error-message" class="error hidden"></p>
+    </div>
+
+<script>
+        // ===============================================================
+        // ▼▼▼ 여기에 차량 정보가 업데이트되었습니다 ▼▼▼
+        // ===============================================================
+        const vehicleData = {
+            "1396": { fullPlate: "67나 1396", model: "모닝", rank: "보급관" },
+            "3484": { fullPlate: "38거 3484", model: "흰 suv", rank: "중대장" },
+            "2424": { fullPlate: "2424", model: "흰 suv", rank: "영감 상사 송기범" },
+            "8936": { fullPlate: "46부 8936", model: "짙회 모닝", rank: "영감부소대장" },
+            "5408": { fullPlate: "36조 5408", model: "검 suv", rank: "이모님" },
+            "6312": { fullPlate: "6312", model: "흰 suv", rank: "김민서 하사" },
+            "7908": { fullPlate: "26우 7908", model: "sm5 흰 승용차", rank: "3소대장" },
+            "8071": { fullPlate: "8071", model: "", rank: "중대장" },
+            "8018": { fullPlate: "59버 8018", model: "흰 suv", rank: "이현철 중위 부댐" },
+            "7414": { fullPlate: "64너 7414", model: "회모닝", rank: "간부차량" },
+            "2835": { fullPlate: "2835", model: "빨간 뚜겅 검은 레이", rank: "이대순 중사" },
+            "2826": { fullPlate: "323라 2826", model: "흰 suv", rank: "박종범 하사" },
+            "9644": { fullPlate: "371머 9644", model: "짙회", rank: "권순홍 중사" },
+            "6327": { fullPlate: "64우 6327", model: "흰", rank: "" },
+            "1688": { fullPlate: "1688", model: "검 suv", rank: "" },
+            "1276": { fullPlate: "24가 1276", model: "흰 쉐보례", rank: "표환 상사" },
+            "8321": { fullPlate: "219누 8321", model: "흰 suv", rank: "간부차량" },
+            "9870": { fullPlate: "9870", model: "긴 은색 승용차", rank: "간부차량" },
+            "9104": { fullPlate: "9104", model: "흰s", rank: "독수리" },
+            "8517": { fullPlate: "57오 8517", model: "은색 승용차", rank: "인사과장 대위 이지호" },
+            "6188": { fullPlate: "117조 6188", model: "짙회색 투싼", rank: "김정우 하사 독수리" },
+            "4078": { fullPlate: "50너 4078", model: "흰 승용차", rank: "대대 정훈장교" },
+            "5539": { fullPlate: "5539", model: "흰 쏘렌토", rank: "사단 법사 스님" },
+            "4110": { fullPlate: "4110", model: "흰 셀토스", rank: "대대 교지관" },
+            "1965": { fullPlate: "222누 1965", model: "흰 suv", rank: "간부차량" },
+            "4168": { fullPlate: "4168", model: "회색 코란도?", rank: "" },
+            "7276": { fullPlate: "63다 7276", model: "", rank: "주차 간부차량" },
+            "0518": { fullPlate: "62어 0518", model: "", rank: "주차 간부차량" },
+            "5609": { fullPlate: "389거 5609", model: "회 suv", rank: "주차 간부차량" },
+            "1075": { fullPlate: "38머 1075", model: "흰 쉐보레", rank: "주차 간부차량" },
+            "7819": { fullPlate: "178너 7819", model: "흰 스포티지", rank: "추진 간부차량" },
+            "4062": { fullPlate: "17소 4062", model: "", rank: "" },
+            "9691": { fullPlate: "9691", model: "모닝", rank: "독수리" },
+            "3547": { fullPlate: "226보 3547", model: "", rank: "장재원 중사" },
+            "4362": { fullPlate: "06러 4362", model: "", rank: "" },
+            "8793": { fullPlate: "8793", model: "회색s", rank: "화기중대 간부" },
+            "1611": { fullPlate: "42누 1611", model: "", rank: "화기중대 간부" },
+            "1217": { fullPlate: "1217", model: "흰suv", rank: "이상호 원사" },
+            "5605": { fullPlate: "201두 5605", model: "흰 suv", rank: "" },
+            "0782": { fullPlate: "41어 0782", model: "물색 suv", rank: "간부차량" },
+            "8786": { fullPlate: "19너 8786", model: "", rank: "간부차량" },
+            "7676": { fullPlate: "358보 7676", model: "", rank: "종교인원 운송 간부차량" },
+            "3839": { fullPlate: "108수 3839", model: "검 승", rank: "" },
+            "2289": { fullPlate: "105구 2289", model: "흰 승", rank: "" },
+            "8159": { fullPlate: "8159", model: "검승", rank: "김찬길 하사" },
+            "1757": { fullPlate: "1757", model: "검 카니발", rank: "간부차량" },
+            "6560": { fullPlate: "6560", model: "물색 suv", rank: "간부차량?" },
+            "0973": { fullPlate: "54부 0973", model: "", rank: "독수리기지 간부차량" },
+            "9901": { fullPlate: "154하 9901", model: "산타페", rank: "" },
+            "0405": { fullPlate: "56더 0405", model: "카니발", rank: "" },
+            "2988": { fullPlate: "247구 2988", model: "검 suv", rank: "소초장님" },
+            "6037": { fullPlate: "57구 6037", model: "흰 suv", rank: "" },
+            "8537": { fullPlate: "8537", model: "", rank: "포반장님" },
+            "8745": { fullPlate: "8745", model: "k7", rank: "중사 유기원 tod반장님" },
+            "2001": { fullPlate: "2001", model: "검s", rank: "" },
+            "5246": { fullPlate: "5246", model: "", rank: "" },
+            "1153": { fullPlate: "1153", model: "흰승", rank: "" },
+            "5887": { fullPlate: "5887", model: "소나타", rank: "" },
+            "6585": { fullPlate: "6585", model: "", rank: "독수리" },
+            "2536": { fullPlate: "2536", model: "흰suv", rank: "이혜주 하사님" },
+            "8510": { fullPlate: "8510", model: "검s", rank: "주제만 하사님" },
+            "3051": { fullPlate: "39거 3051", model: "회색 suv", rank: "안윤상 정훈장교님(신교대)" },
+            "2908": { fullPlate: "90조 2908", model: "", rank: "음식물 쓰레기" },
+            "2209": { fullPlate: "88모 2209", model: "눈달린 흰 트럭", rank: "음식물 수거" },
+            "7201": { fullPlate: "826모 7201", model: "흰 포터II 트럭", rank: "독수리 자판기" },
+            "6483": { fullPlate: "6483", model: "검 카니발", rank: "취사장 공사차량" },
+            "2332": { fullPlate: "2332", model: "파란 포터트럭", rank: "취사장 공사차량" },
+            "5626": { fullPlate: "42오 5626", model: "검 체어맨", rank: "취사장 공사차량" },
+            "3330": { fullPlate: "3330", model: "마이티 트럭", rank: "취사장 공사차량" },
+            "5060": { fullPlate: "5060", model: "", rank: "민통통과 안한 공사인솔 간부차량" }
+        };
+        // ===============================================================
+        // ▲▲▲ 여기까지 수정되었습니다 ▲▲▲
+        // ===============================================================
+
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultDiv = document.getElementById('result');
+        const errorMessage = document.getElementById('error-message');
+        const resultPlate = document.getElementById('result-plate');
+        const resultModel = document.getElementById('result-model');
+        const resultRank = document.getElementById('result-rank');
+
+        function searchVehicle() {
+            const query = searchInput.value;
+            if (!query) {
+                resultDiv.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                return;
+            }
+            const vehicle = vehicleData[query];
+            if (vehicle) {
+                resultPlate.textContent = vehicle.fullPlate;
+                resultModel.textContent = vehicle.model;
+                resultRank.textContent = vehicle.rank;
+                resultDiv.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+            } else {
+                resultDiv.classList.add('hidden');
+                errorMessage.textContent = `'${query}'에 대한 차량 정보가 없습니다.`;
+                errorMessage.classList.remove('hidden');
+            }
+        }
+        searchButton.addEventListener('click', searchVehicle);
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                searchVehicle();
+            }
+        });
+    </script>
+</body>
+</html>
